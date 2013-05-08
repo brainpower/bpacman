@@ -1,0 +1,5 @@
+bpacman
+=======
+
+A graphical frontend to pacman, the Arch Linux package manager,
+inspired by the synaptic package manager.
