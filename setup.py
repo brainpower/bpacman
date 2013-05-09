@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 from distutils.core import setup
 
 setup(name='bpacman',
@@ -6,5 +8,6 @@ setup(name='bpacman',
 			author="brainpower",
 			author_email="brainpower@gulli.com",
 			url="",
-			packages=['bpacman']
+			packages=['bpacman'],
+			scripts=['src/bpacman']
 )
