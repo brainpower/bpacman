@@ -2,6 +2,8 @@
 from gi.repository import Gtk
 from bpacman.pkgview import PkgView
 from bpacman.pacman import Pacman
+from bpacman.fastfilter import FastFilterAction
+
 
 class MainWindow(Gtk.Window):
 
@@ -84,6 +86,8 @@ class MainWindow(Gtk.Window):
 		  ("LockVersion",Gtk.STOCK_DIALOG_AUTHENTICATION, "_Lock Version", None,   None, None),
 		  ("AutoInst",   None,              "Automatically installed",  None,      None, None),
 		])
+
+		ag.add_action(FastFilterAction("FastFilter", "FastFilter", None, None));
 
 		ag.get_action("MarkUpgrds") .set_icon_name("system-upgrade");
 		ag.get_action("MarkUpgrade").set_icon_name("system-upgrade");
