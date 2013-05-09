@@ -1,10 +1,10 @@
 # Maintainer: brainpower <brainpower at gulli dot com>
 pkgname=python-bpacman
-pkgver=0.1.0
+pkgver=15.a9b1066
 pkgrel=1
 pkgdesc="A graphical frontend to pacman, inspired by the synaptic package manager."
 arch=('any')
-url=""
+url="http://github.com/brainpower/bpacman"
 license=('GPL')
 groups=()
 depends=('python')
@@ -22,7 +22,7 @@ source=($pkgname::git+file://..)
 md5sums=(SKIP)
 
 pkgver() {
-  cd local_repo
+  cd "$pkgname"
   echo $(git rev-list --count HEAD).$(git rev-parse --short HEAD)
 }
 
