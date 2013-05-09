@@ -1,4 +1,6 @@
-import main from bpacman.main
+#!/usr/bin/python3
+
+from bpacman import main
 
 if __name__ == "__main__":
 	main()
