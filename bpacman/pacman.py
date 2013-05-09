@@ -25,12 +25,6 @@ class Pacman(object):
 
 	def __init__(self):
 		self.handle  = config.init_with_config("/etc/pacman.conf")
-
-		for db in self.handle.get_syncdbs(): # do a -Sy on start
-			t = transaction.init_from_options(self.handle, None)
-			db.update(False) # dont force update
-			t.release()
-
 		self.update_members()
 
 
@@ -47,11 +41,29 @@ class Pacman(object):
 	def get_groups(self):
 		return self.groups
 
+	def get_package(self, repo, pkgname):
+		return self.syncdbs[repo].get_pkg(pkgname)
+
+	def get_local_package(self, pkgname):
+		return self.handle.get_localdb().get_pkg(pkgname)
+
+	def get_package_list_nvd(self, repo, group=None):
+		if not group:
+			return [ (p.name, p.version, p.desc) for p in self.syncdbs[repo].pkgcache]
+		else:
+			return [ (p.name, p.version, p.desc) for p in self.group_pkgs[repo][group]]
+
+	def get_package_list_n(self, repo, group=None):
+		if not group:
+			return [ { p.name : p} for p in self.syncdbs[repo].pkgcache]
+		else:
+			return [ { p.name : p} for p in self.group_pkgs[repo][group]]
+
 	def get_package_list(self, repo, group=None):
 		if not group:
-			return [ (False, p.name, p.version, p.desc) for p in self.syncdbs[repo].pkgcache]
+			return self.syncdbs[repo].pkgcache
 		else:
-			return [ (False, p.name, p.version, p.desc) for p in self.group_pkgs[repo][group]]
+			return self.group_pkgs[repo][group]
 
 	#~ def get_repo_of_group(self, group):
 		#~ for repo in self.groups:
@@ -76,6 +88,13 @@ class Pacman(object):
 			for p in self.syncdbs[repo].pkgcache:
 				if p.name == pkg:
 					return p.groups;
+
+	def update_dbs(self):
+		for db in self.handle.get_syncdbs(): # do a -Sy on start
+			t = transaction.init_from_options(self.handle, None)
+			db.update(False) # dont force update
+			t.release()
+		self.update_members()
 
 
 def main():
