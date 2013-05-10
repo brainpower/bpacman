@@ -37,7 +37,7 @@ class PkgListAndDesc(Gtk.Paned):
 		self._tbuff.create_tag( "b", weight=Pango.Weight.BOLD)
 
 	def _create_columns(self):
-		state = Gtk.TreeViewColumn(None, Gtk.CellRendererToggle(), active=1)
+		state = Gtk.TreeViewColumn(None, Gtk.CellRendererPixbuf(), pixbuf=1)
 		name  = Gtk.TreeViewColumn("Name", Gtk.CellRendererText(), text=2)
 		iver  = Gtk.TreeViewColumn("Installed Version", Gtk.CellRendererText(), text=3)
 		lver  = Gtk.TreeViewColumn("Latest Version", Gtk.CellRendererText(), text=4)
