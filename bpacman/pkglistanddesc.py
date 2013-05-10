@@ -11,8 +11,8 @@ class PkgListAndDesc(Gtk.Paned):
 		self._create_default_tags();
 		self._update_description("bpacman", "A graphical frontend to pacman, the Arch Linux package manager, inspired by the synaptic package manager.")
 
-		sw1 = Gtk.ScrolledWindow(hexpand=True)
-		sw2 = Gtk.ScrolledWindow(hexpand=True)
+		sw1 = Gtk.ScrolledWindow(hexpand=True, shadow_type=Gtk.ShadowType.IN)
+		sw2 = Gtk.ScrolledWindow(hexpand=True, shadow_type=Gtk.ShadowType.IN)
 
 		self._models = {}
 		self._sort_type = Gtk.SortType.ASCENDING;
@@ -48,7 +48,9 @@ class PkgListAndDesc(Gtk.Paned):
 		lver.set_resizable(True)
 		desc.set_resizable(True)
 		name.set_clickable(True)
+		name.set_sort_indicator(True)
 		name.connect("clicked", self._swap_sort_order)
+		self._name_column = name
 		self._tv.append_column(state)
 		self._tv.append_column(name)
 		self._tv.append_column(iver)
@@ -62,14 +64,16 @@ class PkgListAndDesc(Gtk.Paned):
 		else:
 			self._sort_type = Gtk.SortType.ASCENDING;
 		self._tv.get_model().set_sort_column_id(2, self._sort_type)
+		b.set_sort_order(self._sort_type)
+		b.set_sort_indicator(True)
 
 	def _tv_selection_changed(self, selection):
 		pacman = Pacman.Instance();
 		if not selection:
 			return
 		model,it = selection.get_selected()
-		if model:
-			repo = self._tv.get_model()[it][0]
+		if it:
+			repo = model[it][0]
 			pkgn = model[it][2]
 			pkg = pacman.get_package(repo, pkgn);
 			self._update_description(pkgn, pkg.desc)
@@ -98,3 +102,5 @@ class PkgListAndDesc(Gtk.Paned):
 			self._tv.set_model(self._models[model])
 		except KeyError:
 			sys.stderr.write("[PkgListAndDesc] Warning: Model for '%s' not registered.\n" % model)
+		self._name_column.set_sort_indicator(True)
+		self._name_column.set_sort_order(self._sort_type)
