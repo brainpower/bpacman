@@ -34,6 +34,8 @@ class Pacman(object):
 		self.groupcaches = [ (db,self.syncdbs[db].grpcache) for db in self.syncdbs ]
 		self.groups      = { gc[0]:[ g[0]      for g in gc[1]] for gc in self.groupcaches }
 		self.group_pkgs  = { gc[0]:{ g[0]:g[1] for g in gc[1]} for gc in self.groupcaches }
+		self.all_pkg     = [ p for repo in self.handle.get_syncdbs() for p in repo.pkgcache]
+		self.all_pkg_n   = [ p.name for repo in self.handle.get_syncdbs() for p in repo.pkgcache]
 
 	def get_repos(self):
 		return self.repos
@@ -42,7 +44,30 @@ class Pacman(object):
 		return self.groups
 
 	def get_package(self, repo, pkgname):
+		if repo == "local":
+			return self.handle.get_localdb().get_pkg(pkgname)
 		return self.syncdbs[repo].get_pkg(pkgname)
+
+	def is_installed_n(self, pkgname):
+		return pkgname in [ p.name for p in self.handle.get_localdb().pkgcache ]
+
+	def is_installed(self, pkg):
+		return pkg in self.handle.get_localdb().pkgcache
+
+	def get_not_installed(self):
+		return [ p for p in self.all_pkg if not self.is_installed(p) ]
+
+	def get_installed_pkgs(self, asdep=False, manual=False, localonly=False):
+		if asdep:
+			return [ p for p in self.handle.get_localdb().pkgcache if p.reason == 1 ]
+		if manual:
+			return [ p for p in self.handle.get_localdb().pkgcache if p.reason == 0 ]
+		if localonly:
+			return [x for x in self.handle.get_localdb().pkgcache if x.name not in self.all_pkg_n ]
+		return self.handle.get_localdb().pkgcache
+
+	def get_upgradeable(self):
+		return [ p for p in self.handle.get_localdb().pkgcache if pyalpm.sync_newversion(p, self.handle.get_syncdbs())]
 
 	def get_local_package(self, pkgname):
 		return self.handle.get_localdb().get_pkg(pkgname)
@@ -65,11 +90,6 @@ class Pacman(object):
 		else:
 			return self.group_pkgs[repo][group]
 
-	#~ def get_repo_of_group(self, group):
-		#~ for repo in self.groups:
-			#~ if group in self.groups[repo]:
-				#~ return repo
-
 	def get_repos_of_group(self, group):
 		return [repo for repo in self.groups if group in self.groups[repo]]
 
@@ -77,17 +97,11 @@ class Pacman(object):
 		return self.groups[repo];
 
 	def get_repos_of_pkg(self, pkg):
-		lst = []
-		for repo in self.repos:
-			if pkg in [p.name for p in self.syncdbs[repo].pkgcache]:
-				lst.append(repo);
-		return lst
+		return [ repo for repo in self.repos if self.get_package(repo, pkg) ]
 
 	def get_groups_of_pkg(self, pkg):
 		for repo in self.get_repos():
-			for p in self.syncdbs[repo].pkgcache:
-				if p.name == pkg:
-					return p.groups;
+			return self.get_package(repo, pkg).groups;
 
 	def update_dbs(self):
 		for db in self.handle.get_syncdbs(): # do a -Sy on start
@@ -96,18 +110,33 @@ class Pacman(object):
 			t.release()
 		self.update_members()
 
+	@staticmethod
+	def get_newest_of(pkglist):
+		if pkglist:
+			newest = pkglist[0]
+			for pkg in pkglist:
+				if 1 == pyalpm.vercmp(pkg.version, newest.version):
+					newest = pkg
+			return newest
+
 
 def main():
 	#~ devs = get_devices()
 	#~ for dev,typ in devs:
 		#~ print(dev,typ)
 	#print(get_filesystem_types())
-	pacman = Pacman()
+	pacman = Pacman.Instance()
 	#~ print(pacman.get_repos())
 	#~ print(pacman.get_package_list("core"))
 	#print(pacman.get_groups())
 	#print(pacman.get_package_list("core", "base"))
 	#print(pacman.get_repo_of_group("unity"))
+	print(pacman.get_package("testing", "linux").installdate)
+	print(pacman.get_package("local", "linux").installdate)
+	print(pacman.get_package("core", "linux-lts").installdate)
+	print(pacman.is_installed_n("linux"))
+	print(pacman.is_installed_n("linux-lts"))
+
 
 if __name__ == "__main__":
 	main()
