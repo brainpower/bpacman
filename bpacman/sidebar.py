@@ -23,7 +23,7 @@ class Sidebar(Gtk.Grid):
 		self._update_lists();
 		self._update_models();
 
-		sw = Gtk.ScrolledWindow(vexpand=True, hexpand=True)
+		sw = Gtk.ScrolledWindow(vexpand=True, hexpand=True, shadow_type=Gtk.ShadowType.IN)
 		self._treeview = Gtk.TreeView(self._group_lst);
 		self._treeview.set_vexpand(True)
 		self._treeview.set_hexpand(True)
@@ -59,23 +59,95 @@ class Sidebar(Gtk.Grid):
 			self._state_lst.append([state])
 
 	def _update_models(self):
-		pacman = Pacman.Instance();
+		self._update_model_all_and_grps()
+		self._update_model_installed()
+		self._update_model_installed_dep()
+		self._update_model_installed_man()
+		self._update_model_installed_loc()
+		self._update_model_not_installed()
+		self._update_model_upgradeable()
 
+	def _update_model_installed(self):
+		pacman = Pacman.Instance();
+		minst = Gtk.ListStore(str,bool,str,str,str,str)
+		for pkg in pacman.get_installed_pkgs():
+			for r in pacman.get_repos():
+				spkg = pacman.get_package(r,pkg.name)
+				if spkg:
+					break
+			minst.append(self._pkg_to_model(spkg, pkg))
+		self._pkgview.add_pkg_model("Installed", minst);
+
+	def _update_model_installed_dep(self):
+		pacman = Pacman.Instance();
+		minst = Gtk.ListStore(str,bool,str,str,str,str)
+		for pkg in pacman.get_installed_pkgs(True,False,False):
+			for r in pacman.get_repos():
+				spkg = pacman.get_package(r,pkg.name)
+				if spkg:
+					break
+			minst.append(self._pkg_to_model(spkg, pkg))
+		self._pkgview.add_pkg_model("Installed (as dependency)", minst);
+
+	def _update_model_installed_man(self):
+		pacman = Pacman.Instance();
+		minst = Gtk.ListStore(str,bool,str,str,str,str)
+		for pkg in pacman.get_installed_pkgs(False,True,False):
+			for r in pacman.get_repos():
+				spkg = pacman.get_package(r,pkg.name)
+				if spkg:
+					break
+			minst.append(self._pkg_to_model(spkg, pkg))
+		self._pkgview.add_pkg_model("Installed (manual)", minst);
+
+	def _update_model_installed_loc(self):
+		pacman = Pacman.Instance();
+		minst = Gtk.ListStore(str,bool,str,str,str,str)
+		for pkg in pacman.get_installed_pkgs(False,False,True):
+			minst.append(self._pkg_to_model(None, pkg))
+		self._pkgview.add_pkg_model("Installed (local)", minst);
+
+	def _update_model_not_installed(self):
+		pacman = Pacman.Instance();
+		minst = Gtk.ListStore(str,bool,str,str,str,str)
+		for pkg in pacman.get_not_installed():
+			minst.append(self._pkg_to_model(pkg))
+		self._pkgview.add_pkg_model("Not Installed", minst);
+
+	def _update_model_upgradeable(self):
+		pacman = Pacman.Instance();
+		mupgr = Gtk.ListStore(str,bool,str,str,str,str)
+		for pkg in pacman.get_upgradeable():
+			for r in pacman.get_repos():
+				spkg = pacman.get_package(r,pkg.name)
+				if spkg: break
+			mupgr.append(self._pkg_to_model(spkg, pkg))
+		self._pkgview.add_pkg_model("Upgradeable", mupgr);
+
+	def _update_model_all_and_grps(self):
+		pacman = Pacman.Instance();
 		mall = Gtk.ListStore(str,bool,str,str,str,str)
+
 		for repo in pacman.get_repos():
 			for pkg in pacman.get_package_list(repo):
 				lpkg = pacman.get_local_package(pkg.name)
-				if lpkg:
-					mall.append([pkg.db.name,False,pkg.name,lpkg.version,pkg.version,pkg.desc])
-				else:
-					mall.append([pkg.db.name,False,pkg.name,None,pkg.version,pkg.desc])
+				mall.append(self._pkg_to_model(pkg, lpkg))
+			for group in pacman.get_groups_of_repo(repo):
+				mgrp = Gtk.ListStore(str,bool,str,str,str,str)
+				for pkg in pacman.get_package_list(repo, group):
+					lpkg = pacman.get_local_package(pkg.name)
+					mgrp.append(self._pkg_to_model(pkg, lpkg))
+				mgrp.set_sort_column_id(2, Gtk.SortType.ASCENDING)
+				self._pkgview.add_pkg_model(group, mgrp)
+
 		mall.set_sort_column_id(2, Gtk.SortType.ASCENDING)
 		self._pkgview.add_pkg_model("All", mall);
 
 	def _tv_selection_changed(self, selection):
 		model,it = selection.get_selected()
-		entry = model[it][0]
-		self._pkgview.set_package_model(entry)
+		if it:
+			entry = model[it][0]
+			self._pkgview.set_package_model(entry)
 
 	def _on_g_button(self, b):
 		self._treeview.set_model(self._group_lst)
@@ -106,6 +178,17 @@ class Sidebar(Gtk.Grid):
 #		if b.get_active():
 #			self._treeview.set_model(self._arch_lst)
 #			self._update_button_states(b)
+
+	@staticmethod
+	def _pkg_to_model(spkg=None, lpkg=None):
+		pacman = Pacman.Instance();
+		if not spkg:
+			if not lpkg:
+				return
+			return [ lpkg.db.name, True, lpkg.name, lpkg.version, lpkg.version, lpkg.desc]
+		if not lpkg:
+			return [ spkg.db.name, pacman.is_installed_n(spkg.name), spkg.name, None, spkg.version, spkg.desc]
+		return [ spkg.db.name, pacman.is_installed_n(spkg.name), spkg.name, lpkg.version, spkg.version, spkg.desc]
 
 	def _update_button_states(self, b):
 		for but in self._button_grid.get_children():
