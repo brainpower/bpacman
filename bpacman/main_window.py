@@ -1,8 +1,6 @@
 
-from gi.repository import Gtk
-from bpacman.pkgview import PkgView
-from bpacman.pacman import Pacman
-from bpacman.fastfilter import FastFilterAction
+from bpacman.pkgview import *
+from bpacman.fastfilter import *
 
 
 class MainWindow(Gtk.Window):
@@ -15,6 +13,7 @@ class MainWindow(Gtk.Window):
 
 		ag = Gtk.ActionGroup("actions");
 
+		self._pkgv = PkgView(self);
 		self._add_menu_actions(ag);
 
 		uiman = Gtk.UIManager();
@@ -25,13 +24,14 @@ class MainWindow(Gtk.Window):
 		toolbar = uiman.get_widget("/ToolBar");
 		menubar.set_hexpand(True)
 		toolbar.set_hexpand(True)
+		toolbar.set_style(Gtk.ToolbarStyle.BOTH);
 
 		grid = Gtk.Grid(orientation=Gtk.Orientation.VERTICAL);
-		self.pkgv = PkgView();
+
 
 		grid.add(menubar);
 		grid.add(toolbar);
-		grid.add(self.pkgv);
+		grid.add(self._pkgv);
 		#grid.add(statusbar);
 
 		self.add(grid);
@@ -54,14 +54,14 @@ class MainWindow(Gtk.Window):
 
 		  ("Undo",       Gtk.STOCK_UNDO,    "_Undo",                   "<Ctrl>Z", None, None),
 		  ("Redo",       Gtk.STOCK_REDO,    "_Redo",                   "<Ctrl>Y", None, None),
-		  ("UnmarkAll",  None,              "U_nmark all",              None,      None, None),
-		  ("Search",     Gtk.STOCK_FIND,    "_Search...",              "<Ctrl>F", None, None),
-		  ("UpdateDBs",  Gtk.STOCK_REFRESH, "_Update Databases...",    "<Ctrl>R", None, None),
-		  ("MarkUpgrds", None,              "_Mark upgradeable",       "<Ctrl>G", None, None),
-		  ("ApplyMarked",Gtk.STOCK_APPLY,   "A_pply marked changes...","<Ctrl>P", None, None),
+		  ("UnmarkAll",  None,              "U_nmark all",              None,      None, self._pkgv._reset_marks_action),
+		  ("Search",     Gtk.STOCK_FIND,    "_Search...",              "<Ctrl>F", None, self._pkgv._search_action),
+		  ("UpdateDBs",  Gtk.STOCK_REFRESH, "_Update Databases...",    "<Ctrl>R", None, self._pkgv._update_dbs_action),
+		  ("MarkUpgrds", None,              "_Mark upgradeable",       "<Ctrl>G", None, self._pkgv._mark_upgrades_action),
+		  ("ApplyMarked",Gtk.STOCK_APPLY,   "A_pply marked changes...","<Ctrl>P", None, self._pkgv._apply_marks_action),
 
-		  ("Unmark",     None,              "U_nmark",                 "<Ctrl>N", None, None),
-		  ("MarkInstall",Gtk.STOCK_ADD,     "Mark for _installation",  "<Ctrl>I", None, None),
+		  ("Unmark",     None,              "U_nmark",                 "<Ctrl>N", None, self._pkgv._unmark_pkg_action),
+		  ("MarkInstall",Gtk.STOCK_ADD,     "Mark for _installation",  "<Ctrl>I", None, self._pkgv._mark_pkg_inst_action),
 		  ("MarkReinst" ,Gtk.STOCK_REFRESH, "Mark for _reinstallation", None,      None, None),
 		  ("MarkUpgrade",None,              "Mark for _upgrade",       "<Ctrl>U", None, None),
 		  ("MarkRemove", Gtk.STOCK_REMOVE,  "Mark for _removal",       "Delete",   None, None),
@@ -93,7 +93,6 @@ class MainWindow(Gtk.Window):
 		ag.get_action("MarkUpgrade").set_icon_name("system-upgrade");
 		ag.get_action("UnmarkAll")  .set_icon_name("revert");
 		ag.get_action("Unmark")     .set_icon_name("revert");
-
 
 
 UIINFO = """
