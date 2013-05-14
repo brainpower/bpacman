@@ -55,34 +55,54 @@ class Pacman(object):
 		self.upgradable  = [ p for p in self.handle.get_localdb().pkgcache if pyalpm.sync_newversion(p, self.handle.get_syncdbs())]
 		self.localpkgs_n = [ p.name for p in self.handle.get_localdb().pkgcache ]
 
-	def mark_for_install(self, pkg, revert=False):
+	def mark_for_install(self, repo, pkg, revert=False):
 		if revert:
-			self._to_install.remove(pkg)
+			self._to_install.remove((repo,pkg))
 		else:
-			self._to_install.add(pkg)
-		self.update_depend_inst(pkg, revert)
+			self._to_install.add((repo,pkg))
+		print("to_inst",self._to_install)
+		self.update_depend_inst()
 
 	def mark_for_upgrade(self, pkg, revert=False):
 		if revert:
 			self._to_upgrade.remove(pkg)
 		else:
 			self._to_upgrade.add(pkg)
-		self.update_depend_upgr(pkg, revert)
+		self.update_depend_upgr()
 
 	def mark_for_remove(self, pkg, revert=False):
 		if revert:
-			self._to_remove.remove(pkg)
+			unm = [pkg,]
+			for p in self.get_depends_n(pkg):
+				if p in self._to_remove:
+					unm.append(pkg)
+			for p in unm:
+				self._to_remove.remove(p)
+			return unm
 		else:
-			if not self.pkg_required(pkg):
+			reqlst = set(self.get_pkgs_requiring(pkg))
+			rem = set()
+			for r in reqlst:
+				if r in self._to_remove:
+					rem.add(r)
+			for r in rem:
+				reqlst.remove(r)
+			if len(reqlst) == 0:
 				self._to_remove.add(pkg)
 			else:
-				return "error"
+				print("error package still required by", reqlst)
+				return "error package still required"
 		#self.mark_depend_rem(pkg, revert)
 
+	def get_pkgs_requiring(self, pkgname):
+		return self.get_package("local", pkgname).compute_requiredby()
+
 	def unmark(self, pkgname):
-		if pkgname in self._to_install:
-			self.mark_for_install(pkgname,True)
-		elif pkgname in self._to_upgrade:
+		for repo,pname in self._to_install:
+			if pkgname == pname:
+				self.mark_for_install(repo,pkgname,True)
+				return
+		if pkgname in self._to_upgrade:
 			self.mark_for_upgrade(pkgname,True)
 		elif pkgname in self._to_remove:
 			self.mark_for_remove(pkgname,True)
@@ -90,9 +110,10 @@ class Pacman(object):
 	def update_depend_inst(self):
 		self._to_install_dep = []
 		for p in self._to_install:
-			self._to_install_dep.append(self.get_depends(p))
+			print("update_dep",p, "[1]" ,p[1])
+			self._to_install_dep.append(self.get_depends_n(p[1]))
 
-	def update_depend_upgr(self, pkg, revert=False):
+	def update_depend_upgr(self):
 		self._to_upgrade_dep = []
 		for p in self._to_upgrade:
 			self._to_upgrade_dep.append(self.get_depends_n(p))
@@ -135,6 +156,12 @@ class Pacman(object):
 	def get_dlcb(self):
 		return self.handle.dlcb
 
+	def set_evcb(self, evcb):
+		self.handle.eventcb = evcb
+
+	def set_qcb(self, qcb):
+		self.handle.questioncb = qcb
+
 	def get_repos(self):
 		return self.repos
 
@@ -157,6 +184,9 @@ class Pacman(object):
 		if repo == "local":
 			return self.handle.get_localdb().get_pkg(pkgname)
 		return self.syncdbs[repo].get_pkg(pkgname)
+
+	#def get_package_l(self, name):
+	#	return pyalpm.load_pkg(name)
 
 	def is_installed_n(self, pkgname):
 		return pkgname in self.localpkgs_n
@@ -217,8 +247,6 @@ class Pacman(object):
 			return self.get_package(repo, pkg).groups;
 
 	def update_dbs(self, force=False): # do a "pacman -Sy"
-		print(self.handle.progresscb)
-		print(self.handle.dlcb)
 		for db in self.handle.get_syncdbs():
 			t = self._t_init_from_options(None)
 			db.update(force)
@@ -227,6 +255,19 @@ class Pacman(object):
 
 	def apply_marked(self):
 		print("[pacman] Applying changes... please don't wait, not implemented yet")
+		t = self._t_init_from_options(None)
+
+		# adding pkgs to transaction
+		for p in self._to_install:
+			t.add_pkg(self.get_package(p[0], p[1]))
+		for p in self._to_upgrade:
+			t.add_pkg(pyalpm.sync_newversion(self.get_package("local", p), self.handle.get_syncdbs()))
+		for p in self._to_remove:
+			t.remove_pkg(self.get_package("local", p))
+
+		self._t_finalize(t)
+		#t.release()
+		self.update_members()
 
 	# default Callbacks
 	def _cb_event(self, *args):
@@ -302,8 +343,9 @@ class Pacman(object):
 		try:
 			t.prepare()
 			t.commit()
-		except pyalpm.error:
+		except pyalpm.error as e:
 			traceback.print_exc()
+			print(e.args)
 			t.release()
 			return False
 		t.release()

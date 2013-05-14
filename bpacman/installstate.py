@@ -30,7 +30,7 @@ class InstState(object):
 			state = "installed"
 		if pkgname in pacman.get_upgradeable_n():
 			state = "updateable"
-		if pkgname in pacman.get_to_install() or pkgname in pacman.get_to_install_dep():
+		if pkgname in [ p[1] for p in pacman.get_to_install()] or pkgname in pacman.get_to_install_dep():
 			if state == "installed":
 				state = "reinstall"
 			else:
