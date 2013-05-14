@@ -1,6 +1,7 @@
 import sys
 from gi.repository import Gtk, Pango
-from bpacman.pacman import Pacman
+from bpacman.pacman import *
+from bpacman.installstate import *
 
 class PkgListAndDesc(Gtk.Paned):
 
@@ -86,13 +87,37 @@ class PkgListAndDesc(Gtk.Paned):
 		self._tbuff.insert(begin, "\n")
 		self._tbuff.insert(begin, desc)
 
-	#~ def _update_models(self):
-		#~ pacman = Pacman.Instance();
-#~
+	def update_models(self, pkgname=None):
+		if pkgname:
+			for model in self._models:
+				for pkg in self._models[model]:
+					if pkgname == pkg[2]:
+						pkg[1] = InstState.get_stateicon_of_pkg(pkg[2])
+		else:
+			for model in self._models:
+				for pkg in self._models[model]:
+					pkg[1] = InstState.get_stateicon_of_pkg(pkg[2])
+
 		#~ self._models["All"] = Gtk.ListStore(str)
 		#~ for repo in pacman.get_repos():
 			#~ for pkg in pacman.get_package_list(repo):
 				#~ self._models["All"].append([pkg.name])
+
+	def _mark_current_pkg_inst(self):
+		pacman = Pacman.Instance()
+		model,it = selection.get_selected()
+		if it:
+			pkgname = model[it][2]
+			pacman.mark_for_install(pkgname)
+			self.update_models(pkgname)
+
+	def _unmark_current_pkg(self):
+		pacman = Pacman.Instance()
+		model,it = selection.get_selected()
+		if it:
+			pkgname = model[it][2]
+			pacman.unmark(pkgname)
+			self.update_models(pkgname)
 
 	def add_pkg_model(self, name, model):
 		self._models[name] = model;
@@ -104,3 +129,14 @@ class PkgListAndDesc(Gtk.Paned):
 			sys.stderr.write("[PkgListAndDesc] Warning: Model for '%s' not registered.\n" % model)
 		self._name_column.set_sort_indicator(True)
 		self._name_column.set_sort_order(self._sort_type)
+
+	@staticmethod
+	def _pkg_to_model(spkg=None, lpkg=None):
+		pacman = Pacman.Instance();
+		if not spkg:
+			if not lpkg:
+				return
+			return [ lpkg.db.name, InstState.get_icon_of_state("installed"), lpkg.name, lpkg.version, lpkg.version, lpkg.desc]
+		if not lpkg:
+			return [ spkg.db.name, InstState.get_stateicon_of_pkg(spkg.name), spkg.name, None, spkg.version, spkg.desc]
+		return [ spkg.db.name, InstState.get_stateicon_of_pkg(spkg.name), spkg.name, lpkg.version, spkg.version, spkg.desc]
