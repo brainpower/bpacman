@@ -2,7 +2,6 @@
 from bpacman.pkgview import *
 from bpacman.fastfilter import *
 
-
 class MainWindow(Gtk.Window):
 
 	def __init__(self, title):
@@ -62,10 +61,10 @@ class MainWindow(Gtk.Window):
 
 		  ("Unmark",     None,              "U_nmark",                 "<Ctrl>N", None, self._pkgv._unmark_pkg_action),
 		  ("MarkInstall",Gtk.STOCK_ADD,     "Mark for _installation",  "<Ctrl>I", None, self._pkgv._mark_pkg_inst_action),
-		  ("MarkReinst" ,Gtk.STOCK_REFRESH, "Mark for _reinstallation", None,      None, None),
-		  ("MarkUpgrade",None,              "Mark for _upgrade",       "<Ctrl>U", None, None),
-		  ("MarkRemove", Gtk.STOCK_REMOVE,  "Mark for _removal",       "Delete",   None, None),
-		  ("MarkPurge",  Gtk.STOCK_DELETE,  "Mark for _purge",         "<Shift>Delete",   None, None),
+		  ("MarkReinst" ,Gtk.STOCK_REFRESH, "Mark for _reinstallation", None,      None, self._pkgv._mark_pkg_inst_action),
+		  ("MarkUpgrade",None,              "Mark for _upgrade",       "<Ctrl>U", None, self._pkgv._mark_pkg_upgr_action),
+		  ("MarkRemove", Gtk.STOCK_REMOVE,  "Mark for _removal",       "Delete",   None, self._pkgv._mark_pkg_rem_action),
+		  #("MarkPurge",  Gtk.STOCK_DELETE,  "Mark for _purge",         "<Shift>Delete",   None, None),
 		  #("Configure",  None,              "_Configure...",            None,      None, None),
 		  #("LoadChangelog", None,           "_Download changelog",      None,      None, None),
 		  ("Properties", Gtk.STOCK_PROPERTIES, "_Properties...",        "<Alt>Return", None, None),
