@@ -1,9 +1,7 @@
-import pyalpm
 from gi.repository import Gtk,GdkPixbuf
 
-from bpacman.pacman import Pacman
 from bpacman import utils
-from bpacman.installstate import InstState
+from bpacman.pacman import *
 
 class Sidebar(Gtk.Grid):
 
@@ -60,6 +58,9 @@ class Sidebar(Gtk.Grid):
 
 	def _update_models(self):
 		self._update_model_all_and_grps()
+		self._update_state_models()
+
+	def _update_state_models(self):
 		self._update_model_installed()
 		self._update_model_installed_dep()
 		self._update_model_installed_man()
@@ -75,7 +76,7 @@ class Sidebar(Gtk.Grid):
 				spkg = pacman.get_package(r,pkg.name)
 				if spkg:
 					break
-			minst.append(self._pkg_to_model(spkg, pkg))
+			minst.append(self._pkgview._pkg_to_model(spkg, pkg))
 		self._pkgview.add_pkg_model("Installed", minst);
 
 	def _update_model_installed_dep(self):
@@ -86,7 +87,7 @@ class Sidebar(Gtk.Grid):
 				spkg = pacman.get_package(r,pkg.name)
 				if spkg:
 					break
-			minst.append(self._pkg_to_model(spkg, pkg))
+			minst.append(self._pkgview._pkg_to_model(spkg, pkg))
 		self._pkgview.add_pkg_model("Installed (as dependency)", minst);
 
 	def _update_model_installed_man(self):
@@ -97,21 +98,21 @@ class Sidebar(Gtk.Grid):
 				spkg = pacman.get_package(r,pkg.name)
 				if spkg:
 					break
-			minst.append(self._pkg_to_model(spkg, pkg))
+			minst.append(self._pkgview._pkg_to_model(spkg, pkg))
 		self._pkgview.add_pkg_model("Installed (manual)", minst);
 
 	def _update_model_installed_loc(self):
 		pacman = Pacman.Instance();
 		minst = Gtk.ListStore(str,GdkPixbuf.Pixbuf,str,str,str,str)
 		for pkg in pacman.get_installed_pkgs(False,False,True):
-			minst.append(self._pkg_to_model(None, pkg))
+			minst.append(self._pkgview._pkg_to_model(None, pkg))
 		self._pkgview.add_pkg_model("Installed (local)", minst);
 
 	def _update_model_not_installed(self):
 		pacman = Pacman.Instance();
 		minst = Gtk.ListStore(str,GdkPixbuf.Pixbuf,str,str,str,str)
 		for pkg in pacman.get_not_installed():
-			minst.append(self._pkg_to_model(pkg))
+			minst.append(self._pkgview._pkg_to_model(pkg))
 		self._pkgview.add_pkg_model("Not Installed", minst);
 
 	def _update_model_upgradeable(self):
@@ -121,7 +122,7 @@ class Sidebar(Gtk.Grid):
 			for r in pacman.get_repos():
 				spkg = pacman.get_package(r,pkg.name)
 				if spkg: break
-			mupgr.append(self._pkg_to_model(spkg, pkg))
+			mupgr.append(self._pkgview._pkg_to_model(spkg, pkg))
 		self._pkgview.add_pkg_model("Upgradeable", mupgr);
 
 	def _update_model_all_and_grps(self):
@@ -132,8 +133,8 @@ class Sidebar(Gtk.Grid):
 			mrep = Gtk.ListStore(str,GdkPixbuf.Pixbuf,str,str,str,str)
 			for pkg in pacman.get_package_list(repo):
 				lpkg = pacman.get_local_package(pkg.name)
-				mall.append(self._pkg_to_model(pkg, lpkg))
-				mrep.append(self._pkg_to_model(pkg, lpkg))
+				mall.append(self._pkgview._pkg_to_model(pkg, lpkg))
+				mrep.append(self._pkgview._pkg_to_model(pkg, lpkg))
 			mrep.set_sort_column_id(2, Gtk.SortType.ASCENDING)
 			self._pkgview.add_pkg_model(repo, mrep);
 
@@ -141,7 +142,7 @@ class Sidebar(Gtk.Grid):
 				mgrp = Gtk.ListStore(str,GdkPixbuf.Pixbuf,str,str,str,str)
 				for pkg in pacman.get_package_list(repo, group):
 					lpkg = pacman.get_local_package(pkg.name)
-					mgrp.append(self._pkg_to_model(pkg, lpkg))
+					mgrp.append(self._pkgview._pkg_to_model(pkg, lpkg))
 				mgrp.set_sort_column_id(2, Gtk.SortType.ASCENDING)
 				self._pkgview.add_pkg_model(group, mgrp)
 
@@ -178,17 +179,6 @@ class Sidebar(Gtk.Grid):
 		self._treeview.set_model(self._searches_lst)
 		b.set_active(True)
 		self._update_button_states(b)
-
-	@staticmethod
-	def _pkg_to_model(spkg=None, lpkg=None):
-		pacman = Pacman.Instance();
-		if not spkg:
-			if not lpkg:
-				return
-			return [ lpkg.db.name, InstState.get_icon_of_state("installed"), lpkg.name, lpkg.version, lpkg.version, lpkg.desc]
-		if not lpkg:
-			return [ spkg.db.name, InstState.get_stateicon_of_pkg(spkg.name), spkg.name, None, spkg.version, spkg.desc]
-		return [ spkg.db.name, InstState.get_stateicon_of_pkg(spkg.name), spkg.name, lpkg.version, spkg.version, spkg.desc]
 
 	def _update_button_states(self, b):
 		for but in self._button_grid.get_children():
