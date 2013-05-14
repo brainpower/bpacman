@@ -105,19 +105,38 @@ class PkgListAndDesc(Gtk.Paned):
 
 	def _mark_current_pkg_inst(self):
 		pacman = Pacman.Instance()
-		model,it = selection.get_selected()
+		model,it = self._tv.get_selection().get_selected()
+		if it:
+			repo = model[it][0]
+			pkgname = model[it][2]
+			print("mark inst",repo,pkgname)
+			pacman.mark_for_install(repo,pkgname)
+			self.update_models(pkgname)
+
+	def _mark_current_pkg_upgr(self):
+		pacman = Pacman.Instance()
+		model,it = self._tv.get_selection().get_selected()
 		if it:
 			pkgname = model[it][2]
-			pacman.mark_for_install(pkgname)
+			pacman.mark_for_upgrade(pkgname)
+			self.update_models(pkgname)
+
+	def _mark_current_pkg_rem(self):
+		pacman = Pacman.Instance()
+		model,it = self._tv.get_selection().get_selected()
+		if it:
+			pkgname = model[it][2]
+			pacman.mark_for_remove(pkgname)
 			self.update_models(pkgname)
 
 	def _unmark_current_pkg(self):
 		pacman = Pacman.Instance()
-		model,it = selection.get_selected()
+		model,it = self._tv.get_selection().get_selected()
 		if it:
 			pkgname = model[it][2]
-			pacman.unmark(pkgname)
-			self.update_models(pkgname)
+			unmarked = pacman.unmark(pkgname)
+			for u in unmarked:
+				self.update_models(u)
 
 	def add_pkg_model(self, name, model):
 		self._models[name] = model;
