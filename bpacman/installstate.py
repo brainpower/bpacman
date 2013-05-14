@@ -1,5 +1,5 @@
 import sys,os.path
-from bpacman.pacman import Pacman
+from bpacman.pacman import *
 from gi.repository import GdkPixbuf
 
 class InstState(object):
@@ -30,5 +30,11 @@ class InstState(object):
 			state = "installed"
 		if pkgname in pacman.get_upgradeable_n():
 			state = "updateable"
+		if pkgname in pacman.get_to_install() or pkgname in pacman.get_to_install_dep():
+			state = "install"
+		if pkgname in pacman.get_to_upgrade() or pkgname in pacman.get_to_upgrade_dep():
+			state = "upgrade"
+		if pkgname in pacman.get_to_remove():
+			state = "remove"
 
 		return InstState.get_icon_of_state(state)
