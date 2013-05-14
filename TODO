@@ -1,0 +1,9 @@
+performance:
+* make it start faster
+* use multithreading wherever possible
+
+usability:
+* get root permissions when necessary only, so main app can run in user mode,
+  only getting root permissions for those parts applying changes/updating repos
+  (if possible)
+* implement various actions in menus, dialogs, etc, etc...

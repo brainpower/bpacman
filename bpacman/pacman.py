@@ -177,7 +177,7 @@ class Pacman(object):
 		return self.handle.get_localdb().pkgcache
 
 	def get_upgradeable(self):
-		return self.upgradeable
+		return self.upgradable
 
 	def get_upgradeable_n(self):
 		return self.upgradable_n
