@@ -28,7 +28,10 @@ class UpdateActionDialog(ActionDialog):
 		tv.append_column(text)
 		tv.append_column(progress)
 
-		box.add(tv)
+		tv.set_vexpand(True)
+		sw = Gtk.ScrolledWindow(hexpand=True, vexpand=True)
+		sw.add(tv)
+		box.add(sw)
 		box.show_all()
 		#self.show_all()
 
@@ -53,7 +56,9 @@ class UpdateActionDialog(ActionDialog):
 			if row[0] == filename.split('.')[0]:
 				row[1] = 100/GW*PW
 				return
-		self._model.append([filename, 100/GW*PW])
+		if len(self._model) > 0:
+			self._model[len(self._model)-1][1] = 100
+		self._model.append([filename.split('.')[0], 100/GW*PW])
 		for row in self._model:
 			if row[0] == filename.split('.')[0]:
 				row[1] = 100/GW*PW
