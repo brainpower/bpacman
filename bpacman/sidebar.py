@@ -18,11 +18,13 @@ class Sidebar(Gtk.Grid):
 		self._group_lst.set_sort_column_id(0, Gtk.SortType.ASCENDING)
 		self._filters_lst.set_sort_column_id(0, Gtk.SortType.ASCENDING)
 
+
 		self._update_lists();
+		self._treeview = Gtk.TreeView(self._group_lst);
 		self._update_models();
 
 		sw = Gtk.ScrolledWindow(vexpand=True, hexpand=True, shadow_type=Gtk.ShadowType.IN)
-		self._treeview = Gtk.TreeView(self._group_lst);
+
 		self._treeview.set_vexpand(True)
 		self._treeview.set_hexpand(True)
 		self._treeview.set_headers_visible(False)
@@ -67,6 +69,7 @@ class Sidebar(Gtk.Grid):
 		self._update_model_installed_loc()
 		self._update_model_not_installed()
 		self._update_model_upgradeable()
+		self._update_selected_model()
 
 	def _update_model_installed(self):
 		pacman = Pacman.Instance();
@@ -82,7 +85,7 @@ class Sidebar(Gtk.Grid):
 	def _update_model_installed_dep(self):
 		pacman = Pacman.Instance();
 		minst = Gtk.ListStore(str,GdkPixbuf.Pixbuf,str,str,str,str)
-		for pkg in pacman.get_installed_pkgs(True,False,False):
+		for pkg in pacman.get_installed_pkgs(True):
 			for r in pacman.get_repos():
 				spkg = pacman.get_package(r,pkg.name)
 				if spkg:
@@ -93,7 +96,7 @@ class Sidebar(Gtk.Grid):
 	def _update_model_installed_man(self):
 		pacman = Pacman.Instance();
 		minst = Gtk.ListStore(str,GdkPixbuf.Pixbuf,str,str,str,str)
-		for pkg in pacman.get_installed_pkgs(False,True,False):
+		for pkg in pacman.get_installed_pkgs(manual=True):
 			for r in pacman.get_repos():
 				spkg = pacman.get_package(r,pkg.name)
 				if spkg:
@@ -104,7 +107,7 @@ class Sidebar(Gtk.Grid):
 	def _update_model_installed_loc(self):
 		pacman = Pacman.Instance();
 		minst = Gtk.ListStore(str,GdkPixbuf.Pixbuf,str,str,str,str)
-		for pkg in pacman.get_installed_pkgs(False,False,True):
+		for pkg in pacman.get_installed_pkgs(localonly=True):
 			minst.append(self._pkgview._pkg_to_model(None, pkg))
 		self._pkgview.add_pkg_model("Installed (local)", minst);
 
@@ -151,6 +154,12 @@ class Sidebar(Gtk.Grid):
 
 	def _tv_selection_changed(self, selection):
 		model,it = selection.get_selected()
+		if it:
+			entry = model[it][0]
+			self._pkgview.set_package_model(entry)
+
+	def _update_selected_model(self):
+		model,it = self._treeview.get_selection().get_selected()
 		if it:
 			entry = model[it][0]
 			self._pkgview.set_package_model(entry)
