@@ -73,6 +73,10 @@ class ApplyActionDialog(ActionDialog):
 				self._imodel[0] = [self._lastev, 0]
 			else:
 				self._imodel.append([self._lastev, 0])
+				if self._dling: # assume this is called if download is done, so change some things on first call of this event
+					self.set_title("Installing packages...")
+					self._tv.set_model(self._imodel)
+					self._dling = False
 		elif num in (4, 20, 24, 37,): # event "Done"s for above events
 			self._imodel[0] = [self._ndlastev, 100]
 
