@@ -7,3 +7,8 @@ usability:
   only getting root permissions for those parts applying changes/updating repos
   (if possible)
 * implement various actions in menus, dialogs, etc, etc...
+* mark context menu
+
+core:
+* decent logging
+* undo/redo stack
